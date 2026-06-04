@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_jitsi_meet_suppression.dart';
 
@@ -54,60 +53,77 @@ Future<T> tracedJitsiMeet<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_jitsi_meet');
   final span = t.startSpan('jitsi $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'jitsi');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'jitsi')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.tenant != null) {
-        span.setStringAttribute('jitsi.tenant', res.tenant!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('jitsi.tenant', res.tenant!)]));
       }
       if (res.roomName != null) {
-        span.setStringAttribute('jitsi.room.name', res.roomName!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('jitsi.room.name', res.roomName!)]));
       }
       if (res.roomJid != null) {
-        span.setStringAttribute('jitsi.room.jid', res.roomJid!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('jitsi.room.jid', res.roomJid!)]));
       }
       if (res.participantId != null) {
-        span.setStringAttribute('jitsi.participant.id', res.participantId!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString('jitsi.participant.id', res.participantId!)
+        ]));
       }
       if (res.displayName != null) {
-        span.setStringAttribute(
-          'jitsi.participant.display_name',
-          res.displayName!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            'jitsi.participant.display_name',
+            res.displayName!,
+          )
+        ]));
       }
       if (res.mediaType != null) {
-        span.setStringAttribute('jitsi.media.type', res.mediaType!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('jitsi.media.type', res.mediaType!)]));
       }
       if (res.isModerator != null) {
-        span.setBoolAttribute(
-          'jitsi.participant.is_moderator',
-          res.isModerator!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeBool(
+            'jitsi.participant.is_moderator',
+            res.isModerator!,
+          )
+        ]));
       }
       if (res.participantCount != null) {
-        span.setIntAttribute(
-          'jitsi.room.participant_count',
-          res.participantCount!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeInt(
+            'jitsi.room.participant_count',
+            res.participantCount!,
+          )
+        ]));
       }
       if (res.durationMs != null) {
-        span.setIntAttribute('jitsi.duration', res.durationMs!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('jitsi.duration', res.durationMs!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('jitsi.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('jitsi.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'jitsi.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'jitsi.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
