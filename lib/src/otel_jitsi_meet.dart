@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_jitsi_meet_suppression.dart';
 
 class JitsiMeetResult {
+  /// Creates a result.
   const JitsiMeetResult({
     this.tenant,
     this.roomName,
@@ -35,8 +36,13 @@ class JitsiMeetResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class JitsiMeetCallResult<T> {
+  /// Creates a call result.
   const JitsiMeetCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final JitsiMeetResult? result;
 }
@@ -44,83 +50,84 @@ class JitsiMeetCallResult<T> {
 Future<T> tracedJitsiMeet<T>({
   required String operation,
   required Future<JitsiMeetCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (jitsiMeetInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_jitsi_meet');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_jitsi_meet');
   final span = t.startSpan('jitsi $operation', kind: SpanKind.client);
   try {
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'jitsi')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.system', 'jitsi')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.tenant != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('jitsi.tenant', res.tenant!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('jitsi.tenant', res.tenant!)]));
       }
       if (res.roomName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('jitsi.room.name', res.roomName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('jitsi.room.name', res.roomName!)]));
       }
       if (res.roomJid != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('jitsi.room.jid', res.roomJid!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('jitsi.room.jid', res.roomJid!)]));
       }
       if (res.participantId != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString('jitsi.participant.id', res.participantId!)
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('jitsi.participant.id', res.participantId!)
         ]));
       }
       if (res.displayName != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
             'jitsi.participant.display_name',
             res.displayName!,
           )
         ]));
       }
       if (res.mediaType != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('jitsi.media.type', res.mediaType!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('jitsi.media.type', res.mediaType!)]));
       }
       if (res.isModerator != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeBool(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeBool(
             'jitsi.participant.is_moderator',
             res.isModerator!,
           )
         ]));
       }
       if (res.participantCount != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeInt(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt(
             'jitsi.room.participant_count',
             res.participantCount!,
           )
         ]));
       }
       if (res.durationMs != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('jitsi.duration', res.durationMs!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('jitsi.duration', res.durationMs!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('jitsi.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('jitsi.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'jitsi.error',
           )
         ]));
